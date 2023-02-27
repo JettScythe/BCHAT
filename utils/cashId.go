@@ -47,36 +47,10 @@ func ParseRequest(requestUri string) map[string]interface{} {
 	paramsRegex := regexp.MustCompile(regexpPatterns["parameters"])
 	metadataRegex := regexp.MustCompile(regexpPatterns["metadata"])
 	merged := make(map[string]interface{})
-	requestParts := make(map[string]string)
-
-	// Parse the request URI.
-	requestMatches := requestRegex.FindStringSubmatch(requestUri)
-	for i, name := range requestRegex.SubexpNames() {
-		if i != 0 && name != "" {
-			requestParts[name] = requestMatches[i]
-		}
-	}
-	parametersMatches := paramsRegex.FindStringSubmatch(requestParts["parameters"])
-	parametersMap := make(map[string]string)
-	for i, name := range paramsRegex.SubexpNames() {
-		if i != 0 && name != "" {
-			parametersMap[name] = parametersMatches[i]
-		}
-	}
-	requiredMatches := metadataRegex.FindStringSubmatch(parametersMap["required"])
-	requiredMap := make(map[string]string)
-	for i, name := range metadataRegex.SubexpNames() {
-		if i != 0 && name != "" && !(requiredMatches[i] == "") {
-			requiredMap[name] = requiredMatches[i]
-		}
-	}
-	optionalMatches := metadataRegex.FindStringSubmatch(parametersMap["optional"])
-	optionalMap := make(map[string]string)
-	for i, name := range metadataRegex.SubexpNames() {
-		if i != 0 && name != "" && !(optionalMatches[i] == "") {
-			optionalMap[name] = optionalMatches[i]
-		}
-	}
+	requestParts := MakeMap(requestRegex, requestUri)
+	parametersMap := MakeMap(paramsRegex, requestParts["parameters"])
+	requiredMap := MakeMap(metadataRegex, parametersMap["required"])
+	optionalMap := MakeMap(metadataRegex, parametersMap["optional"])
 	merged = MergeMaps(requestParts, parametersMap)
 	merged["required"] = requiredMap
 	merged["optional"] = optionalMap

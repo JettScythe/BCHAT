@@ -1,6 +1,9 @@
 package utils
 
-import "golang.org/x/crypto/bcrypt"
+import (
+	"golang.org/x/crypto/bcrypt"
+	"regexp"
+)
 
 func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
@@ -22,4 +25,15 @@ func MergeMaps(maps ...map[string]string) map[string]interface{} {
 		}
 	}
 	return merged
+}
+
+func MakeMap(regex *regexp.Regexp, subString string) map[string]string {
+	madeMap := make(map[string]string)
+	xMatches := regex.FindStringSubmatch(subString)
+	for i, name := range regex.SubexpNames() {
+		if i != 0 && name != "" && !(xMatches[i] == "") {
+			madeMap[name] = xMatches[i]
+		}
+	}
+	return madeMap
 }
