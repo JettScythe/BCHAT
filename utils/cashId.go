@@ -2,53 +2,10 @@ package utils
 
 import (
 	"BCHChat/database/models"
-	"fmt"
 	"regexp"
 )
 
-var REGEXP_REQUEST = regexp.MustCompile(`(?P<scheme>.*:)(?:/{2})?(?P<domain>[^/]+)(?P<path>/[^?]+)(?P<parameters>\?.+)`)
-var REGEXP_PARAMETERS = regexp.MustCompile(`(?:(?:[\?\&]a=)(?P<action>[^\&]+))?(?:(?:[\?\&]d=)(?P<data>[^\&]+))?(?:(?:[\?\&]r=)(?P<required>[^\&]+))?(?:(?:[\?\&]o=)(?P<optional>[^\&]+))?(?:(?:[\?\&]x=)(?P<nonce>[^\&]+))?`)
-
-// var REGEXP_METADATA = regexp.MustCompile(`(i(?P<identification>(?![1-9]+))?(?P<name>1)?(?P<family>2)?(?P<nickname>3)?(?P<age>4)?(?P<gender>5)?(?P<birthdate>6)?(?P<picture>8)?(?P<national>9)?)?(p(?P<position>(?![1-9]+))?(?P<country>1)?(?P<state>2)?(?P<city>3)?(?P<streetname>4)?(?P<streetnumber>5)?(?P<residence>6)?(?P<coordinate>9)?)?(c(?P<contact>(?![1-9]+))?(?P<email>1)?(?P<instant>2)?(?P<social>3)?(?P<mobilephone>4)?(?P<homephone>5)?(?P<workphone>6)?(?P<postlabel>9)?)?`)
-var USER_ACTIONS = []string{"delete", "logout", "revoke", "update"}
-var STATUS_CODES = map[string]int{
-	"SUCCESSFUL": 0,
-
-	"REQUEST_BROKEN":           100,
-	"REQUEST_MISSING_SCHEME":   111,
-	"REQUEST_MISSING_DOMAIN":   112,
-	"REQUEST_MISSING_NONCE":    113,
-	"REQUEST_MALFORMED_SCHEME": 121,
-	"REQUEST_MALFORMED_DOMAIN": 122,
-	"REQUEST_INVALID_DOMAIN":   131,
-	"REQUEST_INVALID_NONCE":    132,
-	"REQUEST_ALTERED":          141,
-	"REQUEST_EXPIRED":          142,
-	"REQUEST_CONSUMED":         143,
-
-	"RESPONSE_BROKEN":              200,
-	"RESPONSE_MISSING_REQUEST":     211,
-	"RESPONSE_MISSING_ADDRESS":     212,
-	"RESPONSE_MISSING_SIGNATURE":   213,
-	"RESPONSE_MISSING_METADATA":    214,
-	"RESPONSE_MALFORMED_ADDRESS":   221,
-	"RESPONSE_MALFORMED_SIGNATURE": 222,
-	"RESPONSE_MALFORMED_METADATA":  223,
-	"RESPONSE_INVALID_METHOD":      231,
-	"RESPONSE_INVALID_ADDRESS":     232,
-	"RESPONSE_INVALID_SIGNATURE":   233,
-	"RESPONSE_INVALID_METADATA":    234,
-
-	"SERVICE_BROKEN":                 300,
-	"SERVICE_ADDRESS_DENIED":         311,
-	"SERVICE_ADDRESS_REVOKED":        312,
-	"SERVICE_ACTION_DENIED":          321,
-	"SERVICE_ACTION_UNAVAILABLE":     322,
-	"SERVICE_ACTION_NOT_IMPLEMENTED": 323,
-	"SERVICE_INTERNAL_ERROR":         331,
-}
-
-var METADATA_NAMES = map[string]map[string]int{
+var MetadataTypes = map[string]map[string]int{
 	"identity": {
 		"name":      1,
 		"family":    2,
@@ -77,26 +34,53 @@ var METADATA_NAMES = map[string]map[string]int{
 	},
 }
 
-func ParseRequest(requestURI string) map[string]string {
-	requestParts := REGEXP_REQUEST.FindStringSubmatch(requestURI)
-	requestKeys := REGEXP_REQUEST.SubexpNames()
-	partsMap := make(map[string]string)
-	for i := range requestKeys {
-		if i >= 1 {
-			partsMap[requestKeys[i]] = requestParts[i]
-		}
-	}
-	requestParameters := REGEXP_PARAMETERS.FindStringSubmatch(partsMap["parameters"])
-	paramKeys := REGEXP_PARAMETERS.SubexpNames()
-	for i := range paramKeys {
-		if i >= 1 {
-			partsMap[paramKeys[i]] = requestParameters[i]
-		}
-	}
-	fmt.Println(partsMap)
-	// get parts of requestURL
+var regexpPatterns = map[string]string{
+	"request":    `(?P<scheme>cashid:)(?:[\/]{2})?(?P<domain>[^\/]+)(?P<path>\/[^\?]+)(?P<parameters>\?.+)`,
+	"parameters": `(?:(?:[\?\&]a=)(?P<action>[^\&]+))?(?:(?:[\?\&]d=)(?P<data>[^\&]+))?(?:(?:[\?\&]r=)(?P<required>[^\&]+))?(?:(?:[\?\&]o=)(?P<optional>[^\&]+))?(?:(?:[\?\&]x=)(?P<nonce>[^\&]+))?`,
+	"metadata":   `(i(?P<identification>[^1-9]*)(?P<name>1)?(?P<family>2)?(?P<nickname>3)?(?P<age>4)?(?P<gender>5)?(?P<birthdate>6)?(?P<picture>8)?(?P<national>9)?)?(p(?P<position>[^1-9]*)(?P<country>1)?(?P<state>2)?(?P<city>3)?(?P<streetname>4)?(?P<streetnumber>5)?(?P<residence>6)?(?P<coordinate>9)?)?(c(?P<contact>[^1-9]*)(?P<email>1)?(?P<instant>2)?(?P<social>3)?(?P<mobilephone>4)?(?P<homephone>5)?(?P<workphone>6)?(?P<postlabel>9)?)?`,
+}
 
-	return partsMap
+// ParseRequest parses a CashID request query string into a CashIDRequest struct.
+func ParseRequest(requestUri string) map[string]interface{} {
+	// Initialize empty map
+	requestRegex := regexp.MustCompile(regexpPatterns["request"])
+	paramsRegex := regexp.MustCompile(regexpPatterns["parameters"])
+	metadataRegex := regexp.MustCompile(regexpPatterns["metadata"])
+	merged := make(map[string]interface{})
+	requestParts := make(map[string]string)
+
+	// Parse the request URI.
+	requestMatches := requestRegex.FindStringSubmatch(requestUri)
+	for i, name := range requestRegex.SubexpNames() {
+		if i != 0 && name != "" {
+			requestParts[name] = requestMatches[i]
+		}
+	}
+	parametersMatches := paramsRegex.FindStringSubmatch(requestParts["parameters"])
+	parametersMap := make(map[string]string)
+	for i, name := range paramsRegex.SubexpNames() {
+		if i != 0 && name != "" {
+			parametersMap[name] = parametersMatches[i]
+		}
+	}
+	requiredMatches := metadataRegex.FindStringSubmatch(parametersMap["required"])
+	requiredMap := make(map[string]string)
+	for i, name := range metadataRegex.SubexpNames() {
+		if i != 0 && name != "" && !(requiredMatches[i] == "") {
+			requiredMap[name] = requiredMatches[i]
+		}
+	}
+	optionalMatches := metadataRegex.FindStringSubmatch(parametersMap["optional"])
+	optionalMap := make(map[string]string)
+	for i, name := range metadataRegex.SubexpNames() {
+		if i != 0 && name != "" && !(optionalMatches[i] == "") {
+			optionalMap[name] = optionalMatches[i]
+		}
+	}
+	merged = MergeMaps(requestParts, parametersMap)
+	merged["required"] = requiredMap
+	merged["optional"] = optionalMap
+	return merged
 }
 
 func InvalidateRequest(statusCode int, statusMessage string) models.StatusConfirmation {

@@ -14,6 +14,6 @@ func addUserRoutes() {
 		c.JSON(http.StatusOK, "users comments")
 	})
 	users.GET("/settings", func(c *gin.Context) {
-		c.JSON(http.StatusOK, utils.ParseRequest("cashid:bchchat.xyz/cashid?a=update&d=data&r=required&o=optional&x=nonce"))
+		c.JSON(http.StatusOK, utils.ParseRequest("cashid:bchchat.xyz/api/cashid?a=register&d=newsletter&r=i12p1c1&o=i458p3&x=95261230581"))
 	})
 }
