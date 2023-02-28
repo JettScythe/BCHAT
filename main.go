@@ -1,7 +1,7 @@
 package main
 
 import (
-	"BCHChat/routes"
+	"BCHat/routes"
 	"context"
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
@@ -17,9 +17,13 @@ func init() {
 	conn, dbErr := pgx.Connect(context.Background(), os.Getenv("POSTGRES_URL"))
 	if dbErr != nil {
 		log.Fatal("Failed to connect to database")
-		os.Exit(1)
 	}
-	defer conn.Close(context.Background())
+	defer func(conn *pgx.Conn, ctx context.Context) {
+		err := conn.Close(ctx)
+		if err != nil {
+			log.Fatal("Closed connection to the database")
+		}
+	}(conn, context.Background())
 }
 
 func main() {

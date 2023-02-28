@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"BCHChat/utils"
+	"BCHat/utils"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -13,7 +13,14 @@ func addUserRoutes() {
 	users.GET("/comments", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "users comments")
 	})
-	users.GET("/settings", func(c *gin.Context) {
+	users.GET("/parse-demo", func(c *gin.Context) {
 		c.JSON(http.StatusOK, utils.ParseRequest("cashid:bchchat.xyz/api/cashid?a=register&d=newsletter&r=i12p1c1&o=i458p3&x=95261230581"))
+	})
+	users.GET("/cashID/demo", func(c *gin.Context) {
+		metadata := map[string][]string{
+			"required": {"name", "email"},
+			"optional": {"age", "gender", "phone"},
+		}
+		c.String(http.StatusOK, utils.CreateRequest("login", "", metadata))
 	})
 }

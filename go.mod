@@ -1,4 +1,4 @@
-module BCHChat
+module BCHat
 
 go 1.20
 
