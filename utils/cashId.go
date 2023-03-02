@@ -3,11 +3,50 @@ package utils
 import (
 	"BCHat/database/models"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"math/rand"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
 )
+
+var StatusCodes = map[string]int{
+	"SUCCESSFUL": 0,
+
+	"REQUEST_BROKEN":           100,
+	"REQUEST_MISSING_SCHEME":   111,
+	"REQUEST_MISSING_DOMAIN":   112,
+	"REQUEST_MISSING_NONCE":    113,
+	"REQUEST_MALFORMED_SCHEME": 121,
+	"REQUEST_MALFORMED_DOMAIN": 122,
+	"REQUEST_INVALID_DOMAIN":   131,
+	"REQUEST_INVALID_NONCE":    132,
+	"REQUEST_ALTERED":          141,
+	"REQUEST_EXPIRED":          142,
+	"REQUEST_CONSUMED":         143,
+
+	"RESPONSE_BROKEN":              200,
+	"RESPONSE_MISSING_REQUEST":     211,
+	"RESPONSE_MISSING_ADDRESS":     212,
+	"RESPONSE_MISSING_SIGNATURE":   213,
+	"RESPONSE_MISSING_METADATA":    214,
+	"RESPONSE_MALFORMED_ADDRESS":   221,
+	"RESPONSE_MALFORMED_SIGNATURE": 222,
+	"RESPONSE_MALFORMED_METADATA":  223,
+	"RESPONSE_INVALID_METHOD":      231,
+	"RESPONSE_INVALID_ADDRESS":     232,
+	"RESPONSE_INVALID_SIGNATURE":   233,
+	"RESPONSE_INVALID_METADATA":    234,
+
+	"SERVICE_BROKEN":                 300,
+	"SERVICE_ADDRESS_DENIED":         311,
+	"SERVICE_ADDRESS_REVOKED":        312,
+	"SERVICE_ACTION_DENIED":          321,
+	"SERVICE_ACTION_UNAVAILABLE":     322,
+	"SERVICE_ACTION_NOT_IMPLEMENTED": 323,
+	"SERVICE_INTERNAL_ERROR":         331,
+}
 
 var regexpPatterns = map[string]string{
 	"request":    `(?P<scheme>cashid:)(?:[\/]{2})?(?P<domain>[^\/]+)(?P<path>\/[^\?]+)(?P<parameters>\?.+)`,
@@ -131,9 +170,50 @@ func ParseRequest(requestUri string) map[string]interface{} {
 	return merged
 }
 
-func InvalidateRequest(statusCode int, statusMessage string) models.StatusConfirmation {
-	return models.StatusConfirmation{
-		Status:  statusCode,
-		Message: statusMessage,
+func ValidateRequest(c *gin.Context, req models.Payload) {
+	// Verify the signature
+	verified, err := VerifySignature(req.Address, req.Data, req.Signature)
+	fmt.Println(verified, err)
+	/*if err != nil {
+		fmt.Println(err)
 	}
+	signatureBytes, err := hex.DecodeString(req.Signature)
+	encodedStr := req.Signature
+	decodedBytes, err := base64.StdEncoding.DecodeString(encodedStr)
+	if err != nil {
+		fmt.Println("Error decoding string", err)
+		return
+	}
+	fmt.Println(string(decodedBytes))
+	fmt.Println(signatureBytes)
+	if err != nil {
+		InvalidateRequest(c, "RESPONSE_MALFORMED_SIGNATURE", "Invalid signature format")
+		return
+	}
+
+	publicKeyBytes, err := hex.DecodeString(req.Address)
+	if err != nil {
+		InvalidateRequest(c, "RESPONSE_MALFORMED_ADDRESS", "Invalid public key format")
+		return
+	}
+	publicKey, err := btcec.ParsePubKey(publicKeyBytes)
+	fmt.Println(publicKey)
+	if err != nil {
+		InvalidateRequest(c, "RESPONSE_INVALID_ADDRESS", "invalid public key")
+	}
+
+	InvalidateRequest(c, "SUCCESSFUL", "success")*/
+}
+
+func InvalidateRequest(c *gin.Context, statusCodeName string, statusMessage string) {
+	statusCode, exists := StatusCodes[statusCodeName]
+	if !exists {
+		statusCode = 100 // Default status code for invalid status code names
+	}
+	c.JSON(http.StatusBadRequest, gin.H{
+		"error": gin.H{
+			"code":    statusCode,
+			"message": statusMessage,
+		},
+	})
 }

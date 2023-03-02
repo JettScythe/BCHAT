@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"BCHat/database/models"
 	"BCHat/utils"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -10,12 +11,24 @@ func addUserRoutes() {
 	users.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "users")
 	})
+
+	users.POST("/register", func(c *gin.Context) {
+
+		var req models.Payload
+		if err := c.BindJSON(&req); err != nil {
+			utils.InvalidateRequest(c, "REQUEST_BROKEN", "Invalid request payload")
+		}
+		utils.ValidateRequest(c, req)
+	})
+
 	users.GET("/comments", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "users comments")
 	})
+
 	users.GET("/parse-demo", func(c *gin.Context) {
 		c.JSON(http.StatusOK, utils.ParseRequest("cashid:bchchat.xyz/api/cashid?a=register&d=newsletter&r=i12p1c1&o=i458p3&x=95261230581"))
 	})
+
 	users.GET("/cashID/demo", func(c *gin.Context) {
 		metadata := map[string][]string{
 			"required": {"name", "email"},
@@ -23,4 +36,5 @@ func addUserRoutes() {
 		}
 		c.String(http.StatusOK, utils.CreateRequest("login", "", metadata))
 	})
+
 }
