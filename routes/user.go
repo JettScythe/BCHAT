@@ -1,15 +1,20 @@
 package routes
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
-	"net/http"
+	"strconv"
 )
 
 func addUserRoutes() {
-	users.GET("/:username", func(c *gin.Context) {
-		c.JSON(http.StatusOK, "users")
-	})
-	users.GET("/:pagenum", func(c *gin.Context) {
-		c.JSON(http.StatusOK, "users")
-	})
+	users.GET("/:nameOrNumber", usersHandler)
+}
+
+func usersHandler(c *gin.Context) {
+	nameOrNumber := c.Param("nameOrNumber")
+	name, err := strconv.Atoi(nameOrNumber)
+	if err != nil {
+		// TODO: query the database to return a list of users
+	}
+	fmt.Println(name)
 }
