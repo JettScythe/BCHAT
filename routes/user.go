@@ -13,16 +13,14 @@ func addUserRoutes() {
 	})
 
 	users.POST("/register", func(c *gin.Context) {
-
 		var req models.Payload
 		if err := c.BindJSON(&req); err != nil {
 			utils.InvalidateRequest(c, "REQUEST_BROKEN", "Invalid request payload")
 		}
-		utils.ValidateRequest(c, req)
-	})
-
-	users.GET("/comments", func(c *gin.Context) {
-		c.JSON(http.StatusOK, "users comments")
+		_, err := utils.VerifySignature(req.Address, req.Data, req.Signature)
+		if err != nil {
+			utils.InvalidateRequest(c, "RESPONSE_INVALID_SIGNATURE", "Could not verify signature")
+		}
 	})
 
 	users.GET("/parse-demo", func(c *gin.Context) {

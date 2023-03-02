@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"BCHat/database/models"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"math/rand"
@@ -168,41 +167,6 @@ func ParseRequest(requestUri string) map[string]interface{} {
 	merged["required"] = requiredMap
 	merged["optional"] = optionalMap
 	return merged
-}
-
-func ValidateRequest(c *gin.Context, req models.Payload) {
-	// Verify the signature
-	verified, err := VerifySignature(req.Address, req.Data, req.Signature)
-	fmt.Println(verified, err)
-	/*if err != nil {
-		fmt.Println(err)
-	}
-	signatureBytes, err := hex.DecodeString(req.Signature)
-	encodedStr := req.Signature
-	decodedBytes, err := base64.StdEncoding.DecodeString(encodedStr)
-	if err != nil {
-		fmt.Println("Error decoding string", err)
-		return
-	}
-	fmt.Println(string(decodedBytes))
-	fmt.Println(signatureBytes)
-	if err != nil {
-		InvalidateRequest(c, "RESPONSE_MALFORMED_SIGNATURE", "Invalid signature format")
-		return
-	}
-
-	publicKeyBytes, err := hex.DecodeString(req.Address)
-	if err != nil {
-		InvalidateRequest(c, "RESPONSE_MALFORMED_ADDRESS", "Invalid public key format")
-		return
-	}
-	publicKey, err := btcec.ParsePubKey(publicKeyBytes)
-	fmt.Println(publicKey)
-	if err != nil {
-		InvalidateRequest(c, "RESPONSE_INVALID_ADDRESS", "invalid public key")
-	}
-
-	InvalidateRequest(c, "SUCCESSFUL", "success")*/
 }
 
 func InvalidateRequest(c *gin.Context, statusCodeName string, statusMessage string) {
