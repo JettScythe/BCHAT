@@ -23,7 +23,8 @@ type CashId struct {
 	StatusConfirmation `json:"status-confirmation"`
 }
 type Payload struct {
-	Address   string `json:"address"`
-	Signature string `json:"signature"`
-	Data      string `json:"data"`
+	Address   string                 `json:"address" binding:"required"`
+	Signature string                 `json:"signature" binding:"required"`
+	Request   string                 `json:"request" binding:"required"`
+	Metadata  map[string]interface{} `json:"metadata"`
 }
